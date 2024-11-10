@@ -7,7 +7,7 @@ import { Store } from '../../../../../models/storeModel';
 import mongoose from 'mongoose';
 import Coaching from '@/components/coaching/Coaching';
  
-export default async function page({params}) {
+export default async function Page({params}) {
 
     const { store_id, service_id } = params;
 

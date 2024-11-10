@@ -2,7 +2,6 @@
 import { auth } from '@/auth';
 import { connectDB } from "../utils/connect";
 import { Booking } from '../../models/bookingModel';
-import { User } from 'lucide-react';
 
 export async function createBooking(data) {
     const session = await auth();
