@@ -26,11 +26,10 @@ export async function createBooking(data) {
     console.log(existingBooking)
  
     if (existingBooking.length > 0) 
-      console.log("FAILURE")
       return "Sorry for the inconvenience! This slot is no longer available. Please try again"
   
    
-   /*
+   
       await Booking.create({
         store_id: data.store_id,
         service_id: data.service_id,
@@ -43,7 +42,7 @@ export async function createBooking(data) {
         status: "pending"
     })
 
-      */
+      
     
     
     

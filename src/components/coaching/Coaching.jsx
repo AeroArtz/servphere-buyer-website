@@ -3,10 +3,23 @@ import { createBooking } from '@/actions/createBooking';
 import { Calendar } from '@/components/ui/calendar';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { cache, useEffect, useState } from 'react'
-import { toast } from 'sonner';
+import { toast } from "sonner"
 import useSWR from 'swr';
 import { DateTime } from 'luxon';
-import { colors } from '@/utils/colors';
+
+
+import {
+    Dialog,
+    DialogContent,
+  
+    DialogDescription,
+  
+    DialogHeader,
+  
+    DialogTitle,
+  
+    DialogTrigger,
+  } from "@/components/ui/dialog";
 
 
 const fetcher = ([ url, store_id, service_id, date ]) => fetch(url, {
@@ -35,6 +48,8 @@ export default function Coaching({store_id, service_id, title}) {
     const [index, setIndex] = useState(-1);
 
     const [date, setDate] = useState(new Date());
+
+    const [message, setMessage] = useState('');
 
 
     // SET STATE VARIALBLE CHECKOUT DATA ON MOUNT AND THEME COLOR
@@ -100,81 +115,44 @@ export default function Coaching({store_id, service_id, title}) {
         { 
             refreshInterval: 3000
         })
-    
-    
 
-   
+        const handleChange = (e) => {
+            setMessage(e.target.value)
+        }
+
   return (
     <>
-    {   (timeSlots.length <= 0) ? null : 
-          
+        <div className=''>
+            <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                width={20}                        
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
 
-        <form
-            action= { async () => {
-                if (index >=0){
-                    const toastID = toast.loading("Logging in");
+                className="rounded-md border mt-5"
+            />  
+        </div>
 
-                    const error = await createBooking({
-                        service_id: service_id,
-                        store_id: store_id,
-                        date : DateTime.fromJSDate(date).toFormat('yyyy-MM-dd'),
-                        title:title,
-                        timeData :timeSlots[date.getDay()][index]
-
-                    })
-
-                    if(!error){
-        
-                        // REFRESH PAGE AFTER LOGIN
-                        toast.success("Booking successful", {
-                            id: toastID
-                        });
-                        router.refresh();
-                    }
-        
-                    else{
-                        toast.error(error, {
-                            id: toastID
-                        })
-                    }
-                }
-            }}
-        >
-            <h1 className='text-2xl font-semibold text-gray-600/75'>{title}</h1>
-
-
-            <div className='w-[16rem]'>
-                <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-
-                    className="rounded-md border mt-5"
-                />  
-            </div>
-
-            <h2 className='text-md font-semibold mb-5 mt-9 text-gray-600'>
-                Select time Slots
-            </h2>
-
-            <div className='grid grid-cols-3 mt-5 gap-y-3'>
-
-            {   (timeSlots.length <= 0) ? null : 
+        <div className=''>
+            <div className='grid grid-cols-3 mt-5 gap-3'>
+            {   
+            
+                (timeSlots.length <= 0) ? null : 
                 
                 timeSlots[date.getDay()]?.map((slot, index_) =>
                 
                 <>
-                        {
-                    (data?.find((booking) => (booking.startTime === slot.start || booking.endTime === slot.end)) )
-                    ? null 
-                    :  <div 
-                        onClick={()=> setIndex(index_)}
-                        className={`flex font-medium items-center text-center justify-center rounded-md hover:opacity-60 ${(index >= 0 &&  index===index_) ?`bg-red-400/75` : "bg-gray-200/75" } bg-gray-200/75 h-10 w-32 text-[9px] ${(index >= 0 &&  index===index_) ?"text-white" : "text-gray-500" } text-gray-500`}>
-                            {`${slot.start}-${slot.end}`}
-                    </div>
+                    {
+                        (data?.find((booking) => (booking.startTime === slot.start || booking.endTime === slot.end)) )
+                        ? null 
+                        :  <div 
+                            onClick={()=> setIndex(index_)}
+                            className={`flex font-medium items-center text-center justify-center rounded-md hover:opacity-60 ${(index >= 0 &&  index===index_) ?`bg-red-400/75` : "bg-gray-200/75" } bg-gray-200/75 h-10 w-32 text-[9px] ${(index >= 0 &&  index===index_) ?"text-white" : "text-gray-500" } text-gray-500`}>
+                                {`${slot.start}-${slot.end}`}
+                        </div>
 
-                }    
+                    }    
                 </> 
                     
                 )    
@@ -182,16 +160,80 @@ export default function Coaching({store_id, service_id, title}) {
             }
             </div>
 
-            <button type='submit' className='bg-red-400 hover:opacity-60 active:opacity-60 py-2 w-full rounded focus:outline-none focus:shadow-outline mt-8 mb-10'>
-                    <h4 className='text-sm text-white'>Book Appointment</h4>            
-            </button>
+            <Dialog>
+                <DialogTrigger asChild>
+                <button className='bg-red-400 w-full p-2.5 rounded-md text-md font-semibold text-white mt-8' type='submit'>Book Appointment</button>
+
+                </DialogTrigger>
+            
+                <DialogContent className="sm:max-w-[475px]">
+
+                    <DialogHeader>
+                        <DialogTitle>Book Your Appointment</DialogTitle>
+                        <DialogDescription>
+                            Any additional message you may want to leave
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form  action= { async () => {
+                        if (index >=0){
+                            const toastID = toast.loading("Creating Booking");
+
+                            const error = await createBooking({
+                                store_id: store_id,
+                                service_id : service_id,
+                                date : DateTime.fromJSDate(date).toFormat('yyyy-MM-dd'),
+                                title:title,
+                                message : message,
+                                timeData :timeSlots[date.getDay()][index]
+
+                            })
+
+                            if(!error){
+                
+                                // REFRESH PAGE AFTER LOGIN
+                                toast.success("Booking successful", {
+                                    id: toastID
+                                });
+                                router.refresh();
+                            }
+                
+                            else{
+                                toast.error(error, {
+                                    id: toastID
+                                })
+                            }
+                        }
+                    }}>
+                    <textarea className='w-full h-16 p-5' onChange={handleChange} type='text' name='additional' placeholder='Additional note'/>
+                    <button className='bg-red-400 w-full p-2.5 rounded-md text-md font-semibold text-white mt-8' type='submit'>Book Appointment</button>
+
+                    </form>
                 
             
-        </form>
-         
-    }
+                </DialogContent>
+            </Dialog>
+        </div>
 
     </>
 
   )
 }
+
+function StarIcon(props) {
+    return (
+      <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    )
+  }

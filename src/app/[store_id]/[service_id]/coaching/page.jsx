@@ -1,205 +1,121 @@
-'use client'
-import { createBooking } from '@/actions/createBooking';
-import { Calendar } from '@/components/ui/calendar';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import React, { cache, useEffect, useState } from 'react'
-import { toast } from 'sonner';
-import useSWR from 'swr';
-import { DateTime } from 'luxon';
 
+import React from 'react'
+import Navbar from '@/components/Navbar';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { connectDB } from '@/utils/connect';
+import { Store } from '../../../../../models/storeModel';
+import mongoose from 'mongoose';
+import Coaching from '@/components/coaching/Coaching';
+ 
+export default async function page({params}) {
 
-const fetcher = ([ url, store_id, service_id, date ]) => fetch(url, {
-    method: "POST",
-    body: JSON.stringify({
-        store_id: store_id,
-        service_id: service_id,
-        date : date
-    },
-    {cache: 'no-store'}
-    )
-}).then(res => res.json())
+    const { store_id, service_id } = params;
 
-export default function page() {
+    await connectDB();
 
-    // GET PARAMETERS FROM CURRENT URL 
+    let productData;
+    let thumbnailData;
 
-    const router = useRouter();
-    const params = useParams();
+    try{
+        productData = await Store.findOne(
+        { _id: new mongoose.Types.ObjectId(store_id),
+            'services._id': new mongoose.Types.ObjectId(service_id) },
+        { _id: 0, 'services.$': 1 }
+        );    
 
-    const searchParams = useSearchParams()
-
-    const title = searchParams.get('title')
-
-    // STATE VARIABLE TO STORE AVAILABILITY DATA
-    const [timeSlots, setTimeSlots] = useState([]);
-    const [themeColor, setThemeColor] = useState('#000000');
-
-    // INDEX OF CURRENTLY SELECTED TIME SLOT
-
-    const [index, setIndex] = useState(-1);
-
-    const [date, setDate] = useState(new Date());
-
-
-    // SET STATE VARIALBLE CHECKOUT DATA ON MOUNT AND THEME COLOR
-    useEffect(() => {
-        // declare the data fetching function
-        const fetchData = async () => {
-            let res = await fetch("/api/get-time-slots",
-            {   
-                method: 'POST',
-                body: JSON.stringify({
-                    store_id: params.store_id,
-                    service_id : params.service_id
-                }),
-                cache : "no-store"
-            });
-
-           res = await res.json()
-
-            setTimeSlots(res)
-
-        }
-      
-        // call the function
-        fetchData()
-          // make sure to catch any error
-          .catch(console.error);
-      }, [])
-
-
-      /*
-      const { dat, error, isLoading } = useSWR(
-        
-        [
-            '/api/getAllBookings',
-            params.store_id,
-            params.service_id,
-            (timeSlots?.length > 0) ? timeSlots[date.getDay()][index]?.start : "",
-            (timeSlots?.length > 0) ? timeSlots[date.getDay()][index]?.end : "",
-            `${DateTime.fromJSDate(date).toFormat('yyyy-MM-dd')}T00:00:00.000+00:00`,
-
-        ],
-        fetcher,
-        { 
-            refreshInterval: 5000
-        })
-
-     
-    if (!isLoading) 
-        console.log(dat)
-
-        */
-
-        const { data, error, isLoading } = useSWR(
-        
-            [
-                '/api/getAllBookings',
-                params.store_id,
-                params.service_id,
-                `${DateTime.fromJSDate(date).toFormat('yyyy-MM-dd')}T00:00:00.000+00:00`,    
-            ],
-    
-        fetcher,
-        { 
-            refreshInterval: 3000
-        })
-    
-        if (!isLoading) console.log(data)
-
-   
-  return (
-    <div className='flex h-full w-full'>
-    {/* CHECK WHETHER API FETCHED OR NOT */}
-    {   (timeSlots.length <= 0) ? null : 
-            <div>
-
-                <form
-                    action= { async () => {
-                        if (index >=0){
-                            const toastID = toast.loading("Logging in");
-
-                            const error = await createBooking({
-                                service_id: params.service_id,
-                                store_id: params.store_id,
-                                date : DateTime.fromJSDate(date).toFormat('yyyy-MM-dd'),
-                                title:title,
-                                timeData :timeSlots[date.getDay()][index]
-
-                            })
-
-                            if(!error){
-                
-                                // REFRESH PAGE AFTER LOGIN
-                                toast.success("Booking successful", {
-                                    id: toastID
-                                });
-                                router.refresh();
-                            }
-                
-                            else{
-                                toast.error(error, {
-                                    id: toastID
-                                })
-                            }
-                        }
-                    }}
-                >
-                    <h1 className='text-black text-lg'>{title}</h1>
-
-
-                    <div className='flex flex-col h-full w-full justify-center items-center'>
-                        <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-
-                            className="rounded-md border"
-                        />  
-
-                        <div className='flex flex-col space-y-3 mt-6'>
-                            <h2 className='text-md font-semibold text-gray-600'>
-                                Select time Slots
-                            </h2>
-
-                            <div className='grid grid-cols-2 gap-3'>
-
-                            {   (timeSlots.length <= 0) ? null : 
-                                
-                                timeSlots[date.getDay()]?.map((slot, index_) =>
-                                
-                               <>
-                                     {
-                                    (data?.find((booking) => (booking.startTime === slot.start || booking.endTime === slot.end)) )
-                                    ? null 
-                                    :  <div 
-                                        onClick={()=> setIndex(index_)}
-                                        className={`flex items-center text-center justify-center rounded-md hover:opacity-60 ${(index >= 0 &&  index===index_) ?"bg-sky-400/75" : "bg-gray-200/75" } bg-gray-200/75 h-10 w-28 text-[9px] text-gray-500`}>
-                                            {`${slot.start}-${slot.end}`}
-                                    </div>
-
-                                }    
-                                </> 
-                                    
-                                )    
-
-                            }
-                            </div>
-   
-                                <button type='submit' className='bg-teal-500/75 hover:bg-teal-300/75 py-2 w-full rounded focus:outline-none focus:shadow-outline mt-6 mb-10'>
-                                        <h4 className='text-sm text-white'>Book Appointment</h4>            
-                                </button>
-                         
-                            <div className='pb-16'>
-
-                            </div>
-                        </div>
-                    </div> 
-                </form>
-            </div>
+        thumbnailData = productData?.services[0]?.thumbnail
+    } catch(err){
+        console.log(err)
     }
 
-</div>
+  return (
+    <div className='flex w-full h-full'>
+
+        <Navbar/>
+        <div className='bg-white px-10 w-full flex flex-col space-x-10 mt-16'>
+    
+            <h1 className='text-3xl ml-10 text-gray-600 font-bold'>
+                {thumbnailData?.title}
+            </h1>
+
+            <p className='text-sm text-gray-400 mt-3'>
+                {thumbnailData?.subtitle}
+            </p>
+
+            <div className='flex w-3/4 p-10 mt-10 justify-center space-x-6 rounded-lg border border-gray-300'>
+
+              <Coaching
+                store_id={store_id}
+                service_id={service_id}
+                title={thumbnailData?.title}
+              />
+
+            </div>
+
+            <div className='mt-10 pb-16 w-3/4'>
+                <div className="grid gap-4">
+            <h2 className="text-2xl font-bold">Customer Reviews</h2>
+            <div className="grid gap-6">
+            {
+              (JSON.stringify(productData) !== '{}' ) ? 
+
+            
+              productData?.services[0].reviews?.map((elm, index) =>  
+
+              <div key={index} className="flex gap-4">
+                <Avatar className="w-10 h-10 border">
+                  <AvatarImage src="/placeholder-user.jpg" alt="@shadcn" />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{elm.clientName}</h3>
+                    <div className="flex items-center gap-0.5">
+
+                      {
+                        [1,2,3,4,5].map((star, index) => <StarIcon className={`w-5 h-5 ${(star < 4) ? "fill-primary": "fill-muted stroke-muted-foreground"}`} />)
+                      }
+                      
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {elm.content}
+                  </p>
+                </div>
+              </div>
+              )
+
+              : null
+            }
+            </div>
+                </div>
+                
+            
+            </div>
+        </div>
+
+         
+        
+      
+    </div>
   )
 }
+
+function StarIcon(props) {
+    return (
+      <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    )
+  }
