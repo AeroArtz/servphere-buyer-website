@@ -5,7 +5,7 @@ export async function connectDB(){
         if (mongoose.connections && mongoose.connections[0].readyState) return;
 
         const { connection } = await mongoose.connect(
-            process.env.MONGO_URI,
+            process.env.MONGODB_URI,
             {
                 dbName: "servphere",
             }
