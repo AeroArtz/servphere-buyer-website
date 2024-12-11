@@ -1,28 +1,30 @@
 import { auth } from '@/auth';
 import LoginPopover from '@/components/login/LoginPopover';
 import SignupPopover from '@/components/register/SignupPopover';
-import { colors } from '@/utils/colors';
-import { connectDB } from '@/utils/connect';
-import { Search } from 'lucide-react';
-import { Store } from '../../models/storeModel';
 import Link from 'next/link';
 import SearchBar from '@/components/home/SearchBar';
 import Navbar from '@/components/Navbar';
+import { db } from '@/db';
+import { sql } from 'drizzle-orm';
+import { stores } from '@/db/schema/stores';
+
 
 export default async function Home() {
 
+  const session = await auth();
   const airbnb_red = "#f57575"
-  
-  await connectDB();
 
-  let stores ;
+  let storesData ;
   try{
-    stores = await Store.find({});      
+    storesData = await db.execute(sql`select * from ${stores}`);
+    storesData = storesData.rows;   
+
+    console.log(storesData)
   } catch(err){
       console.log(err)
   }
 
-  console.log(stores)
+  console.log(storesData)
   return (
     <div className='h-full w-full flex'>
       <Navbar/>
@@ -55,9 +57,9 @@ export default async function Home() {
 
           <div className='grid grid-cols-3 gap-5 mt-16'>
             {
-              stores.map((store, index) =>
-                <Link href={`/${store._id}`}>
-                  <div key={index} className='flex hover:opacity-60 space-x-2 border w-[25rem] p-4 border-gray-200/75 rounded-lg'>
+              storesData?.map((store, index) =>
+                <Link key={index} href={`/${store.id}`}>
+                  <div className='flex hover:opacity-60 space-x-2 border w-[25rem] p-4 border-gray-200/75 rounded-lg'>
 
                     <div style={{backgroundImage: `url(${store?.img})`}} className='flex bg-cover h-[5rem] w-[5rem] rounded-full'>
                     </div>

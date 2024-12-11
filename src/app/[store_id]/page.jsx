@@ -1,35 +1,33 @@
 import React from 'react'
-import { connectDB } from '@/utils/connect';
-import { Store } from '../../../models/storeModel'
 import { colors } from '@/utils/colors';
 import { Link as Link_, MapPin } from 'lucide-react';
 import Link from 'next/link';
-import {
-  Dialog,
-  DialogContent,
-
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import Coaching from '@/components/coaching/Coaching';
-import Digital from '@/components/digital/Digital';
 import Navbar from '@/components/Navbar';
+import { db } from '@/db';
+import {  sql } from 'drizzle-orm';
+import { services } from '@/db/schema/services';
+
 
 export default async function Page({ params }) {
   //const params = useParams();
 
   // store_id = 6697f1b4b2ca30ac98fc4aac
   const { store_id } = params;
- 
-  await connectDB();
 
-  let data ;
+  let data;
+  let servicesData;
+
   try{
-    data = await Store.findById(store_id);      
+    data = await db.execute(sql`SELECT * FROM store WHERE id=${store_id}`);
+    data = data.rows[0]
+    
+    servicesData = await db.execute(sql`select * from ${services} where ${services.store_id}=${store_id}`);
+    servicesData = servicesData.rows;
+
   } catch(err){
       console.log(err)
   }
 
-//console.log(data)  
 
 
   return (
@@ -67,8 +65,8 @@ export default async function Page({ params }) {
 
             <div className='grid grid-cols-1 md:grid-cols-2 md:gap-3 mt-3 w-full'>
 
-              {data?.services?.map((elm,index) =>
-                <Link href={`${store_id}/${elm._id}/${elm.label}?title=${elm.thumbnail.title}`}>
+              {servicesData?.map((elm,index) =>
+                <Link key={index} href={`${store_id}/${elm.id}/${elm.label}?title=${elm.thumbnail.title}`}>
                   <div className='flex justify-between h-[6rem] hover:opacity-60 active:opacity-60 bg-white rounded-lg shadow-sm p-3'>
             
                     <div className='w-[65%]'>

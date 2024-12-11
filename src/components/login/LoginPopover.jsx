@@ -9,7 +9,6 @@ import {
 
     DialogTrigger,
   } from "@/components/ui/dialog";
-  import { colors } from '@/utils/colors';
 import { LoginForm } from '../LoginForm';
 import { signIn } from '@/auth';
 

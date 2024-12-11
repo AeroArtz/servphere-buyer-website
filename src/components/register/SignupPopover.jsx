@@ -4,7 +4,6 @@ import {
     DialogContent,
     DialogTrigger,
   } from "@/components/ui/dialog";
-  import { colors } from '@/utils/colors';
 import SignupForm from './SignupForm';
 
 

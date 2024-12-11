@@ -1,11 +1,8 @@
-'use client'
-import { createBooking } from '@/actions/createBooking';
+"use client"
 import { Calendar } from '@/components/ui/calendar';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import React, { cache, useEffect, useState } from 'react'
-import { toast } from "sonner"
+import { DateTime } from 'luxon'
+import React, { useEffect, useState } from 'react'
 import useSWR from 'swr';
-import { DateTime } from 'luxon';
 
 
 import {
@@ -20,38 +17,29 @@ import {
   
     DialogTrigger,
   } from "@/components/ui/dialog";
+import { toast } from 'sonner';
+import { createBooking } from '@/actions/createBooking';
+import { useRouter } from 'next/navigation';
 
-
-const fetcher = ([ url, store_id, service_id, date ]) => fetch(url, {
-    method: "POST",
-    body: JSON.stringify({
-        store_id: store_id,
-        service_id: service_id,
-        date : date
-    },
-    {cache: 'no-store'}
-    )
+const fetcher = ([ url, service_id, date ]) => fetch(url, {
+  method: "POST",
+  body: JSON.stringify({
+      service_id: service_id,
+      date : date
+  },
+  {cache: 'no-store'}
+  )
 }).then(res => res.json())
-
-export default function Coaching({store_id, service_id, title}) {
-
-    // GET PARAMETERS FROM CURRENT URL 
+export default function Coaching({store_id, service_id}) {
 
     const router = useRouter();
-
-    // STATE VARIABLE TO STORE AVAILABILITY DATA
-    const [timeSlots, setTimeSlots] = useState([]);
-    const [themeColor, setThemeColor] = useState('#000000');
-
-    // INDEX OF CURRENTLY SELECTED TIME SLOT
-
-    const [index, setIndex] = useState(-1);
-
     const [date, setDate] = useState(new Date());
 
-    const [message, setMessage] = useState('');
-
-
+    const [timeSlots, setTimeSlots] = useState([]);
+    const [message , setMessage] = useState('')
+  
+    const [index, setIndex] = useState(-1);
+  
     // SET STATE VARIALBLE CHECKOUT DATA ON MOUNT AND THEME COLOR
     useEffect(() => {
         // declare the data fetching function
@@ -60,65 +48,44 @@ export default function Coaching({store_id, service_id, title}) {
             {   
                 method: 'POST',
                 body: JSON.stringify({
-                    store_id: store_id,
-                    service_id : service_id
+                    store_id: "a721a1c0-f6c0-4a80-a115-12ecc119c9ef",
+                    service_id : "dd1ca28c-5cb2-429a-8619-8003822e20bf"
                 }),
                 cache : "no-store"
             });
 
-           res = await res.json()
+            res = await res.json()
 
             setTimeSlots(res)
 
         }
-      
+    
         // call the function
         fetchData()
-          // make sure to catch any error
-          .catch(console.error);
-      }, [])
+        // make sure to catch any error
+        .catch(console.error);
+    }, [])
 
+    const { data, error, isLoading } = useSWR(
+          
+      [
+          '/api/getAllBookings',
+          "dd1ca28c-5cb2-429a-8619-8003822e20bf",
+          DateTime.fromJSDate(date).toFormat('yyyy-MM-dd'),   
+      ],
+  
+      fetcher,
+      { 
+          refreshInterval: 5000
+      })
+  
+      console.log(data)
 
-      /*
-      const { dat, error, isLoading } = useSWR(
-        
-        [
-            '/api/getAllBookings',
-            params.store_id,
-            params.service_id,
-            (timeSlots?.length > 0) ? timeSlots[date.getDay()][index]?.start : "",
-            (timeSlots?.length > 0) ? timeSlots[date.getDay()][index]?.end : "",
-            `${DateTime.fromJSDate(date).toFormat('yyyy-MM-dd')}T00:00:00.000+00:00`,
-
-        ],
-        fetcher,
-        { 
-            refreshInterval: 5000
-        })
-
-     
-    if (!isLoading) 
-        console.log(dat)
-
-        */
-
-        const { data, error, isLoading } = useSWR(
-        
-            [
-                '/api/getAllBookings',
-                store_id,
-                service_id,
-                `${DateTime.fromJSDate(date).toFormat('yyyy-MM-dd')}T00:00:00.000+00:00`,    
-            ],
-    
-        fetcher,
-        { 
-            refreshInterval: 3000
-        })
-
-        const handleChange = (e) => {
-            setMessage(e.target.value)
-        }
+      const handleChange = (e) => {
+        setMessage(e.target.value)
+    }
+  
+      let newData = []
 
   return (
     <>
@@ -134,30 +101,30 @@ export default function Coaching({store_id, service_id, title}) {
             />  
         </div>
 
-        <div className=''>
+        <div>
             <div className='grid grid-cols-3 mt-5 gap-3'>
-            {   
-            
-                (timeSlots.length <= 0) ? null : 
+                {   
                 
-                timeSlots[date.getDay()]?.map((slot, index_) =>
-                
-                <>
-                    {
-                        (data?.find((booking) => (booking.startTime === slot.start || booking.endTime === slot.end)) )
-                        ? null 
-                        :  <div 
-                            onClick={()=> setIndex(index_)}
-                            className={`flex font-medium items-center text-center justify-center rounded-md hover:opacity-60 ${(index >= 0 &&  index===index_) ?`bg-red-400/75` : "bg-gray-200/75" } bg-gray-200/75 h-10 w-32 text-[9px] ${(index >= 0 &&  index===index_) ?"text-white" : "text-gray-500" } text-gray-500`}>
-                                {`${slot.start}-${slot.end}`}
-                        </div>
-
-                    }    
-                </> 
+                    (timeSlots.length <= 0) ? null : 
                     
-                )    
+                    timeSlots[date.getDay()]?.map((slot, index_) =>
+                    
+                    <>
+                        {
+                            (data?.find((booking) => (booking.startTime === slot.start || booking.endTime === slot.end)) )
+                            ? null 
+                            :  <div 
+                                onClick={()=> setIndex(index_)}
+                                className={`flex font-medium items-center text-center justify-center rounded-md hover:opacity-60 ${(index >= 0 &&  index===index_) ?`bg-red-400/75` : "bg-gray-200/75" } bg-gray-200/75 h-10 w-32 text-[9px] ${(index >= 0 &&  index===index_) ?"text-white" : "text-gray-500" } text-gray-500`}>
+                                    {`${slot.start}-${slot.end}`}
+                            </div>
 
-            }
+                        }    
+                    </> 
+                        
+                    )    
+
+                }
             </div>
 
             <Dialog>
@@ -182,7 +149,6 @@ export default function Coaching({store_id, service_id, title}) {
                                 store_id: store_id,
                                 service_id : service_id,
                                 date : DateTime.fromJSDate(date).toFormat('yyyy-MM-dd'),
-                                title:title,
                                 message : message,
                                 timeData :timeSlots[date.getDay()][index]
 
@@ -215,7 +181,6 @@ export default function Coaching({store_id, service_id, title}) {
         </div>
 
     </>
-
   )
 }
 

@@ -6,9 +6,8 @@ import { createDigitalBooking } from '@/actions/createDigitalBooking';
 import { useRouter } from 'next/navigation';
 
 export default function DigitalFormSubmission({
-  store_id,
   service_id,
-  title, 
+  type
  }) {
   const router = useRouter();
 
@@ -20,9 +19,7 @@ export default function DigitalFormSubmission({
 
         const error = await createDigitalBooking({
             service_id: service_id,
-            store_id: store_id,
-            title: title,
-
+            type : type
         })
 
         if(!error){

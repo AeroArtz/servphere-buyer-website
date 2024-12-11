@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/utils/connect";
 import { auth } from '@/auth';
-import { Store } from "../../../../models/storeModel";
-import mongoose from "mongoose";
+import { db } from "@/db";
+import { reviews } from "@/db/schema/reviews";
 
 export async function POST(req){
 
@@ -10,48 +9,19 @@ export async function POST(req){
 
     const { store_id, service_id, content, rating} = await req.json();
 
+    console.log(rating)
+    console.log(typeof(rating))
     try {
 
-        await connectDB();
-
-        /*
-
-        // PASS ID , DATA WHICH IS DATE AND START TIME , DATE WHICH IS  DATE.TOSTRING()
-        await Booking.create({
-            store_id: store_id,
-            service_id: service_id,
-            startTime: startTime,
-            endTime: endTime,
-            date : date,
-            clientEmail : session?.user?.email,
-            clientName: session?.user?.name,
-            serviceName: title,
-            status: "pending"
+        await db.insert(reviews).values({
+            serviceId : service_id,
+            clientId : session?.user?.id,
+            content: content,
+            ratings : rating
         })
 
-        */
-
-        await Store.updateOne(
-            { 
-                _id: new mongoose.Types.ObjectId(store_id),
-                "services._id": new mongoose.Types.ObjectId(service_id)
-            },
-            {
-              $push: {
-                "services.$.reviews": {
-                  clientName: session?.user?.name,
-                  clientEmail: session?.user?.email,
-                  content: content,
-                  rating : rating
-                }
-              }
-            }
-          );
-
           
-        
-        
-    
+      
         return NextResponse.json("Success", {status : 200});
 
 

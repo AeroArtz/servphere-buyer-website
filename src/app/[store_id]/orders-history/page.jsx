@@ -1,33 +1,35 @@
-import { connectDB } from '@/utils/connect';
-import { Booking } from '../../../../models/bookingModel';
-import mongoose from 'mongoose';
 import {
     Dialog,
     DialogContent,
-  
     DialogTrigger,
   } from "@/components/ui/dialog";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import ReviewCard from '@/components/review/ReviewCard';
 import Navbar from '@/components/Navbar';
+import { db } from '@/db';
+import { bookings } from '@/db/schema/bookings';
+import { eq, sql } from 'drizzle-orm';
+import { auth } from '@/auth';
+import { services } from '@/db/schema/services';
+import { DialogTitle } from '@radix-ui/react-dialog';
 
 export default async function Page({ params }) {
   //const params = useParams();
 
+  const session = await auth();
 
   // store_id = 6697f1b4b2ca30ac98fc4aac
   const { store_id } = params;
- 
-  await connectDB();
 
  
   let data ;
+  let result
   try{
-    data = await Booking.find({store_id: new mongoose.Types.ObjectId(store_id), clientEmail: "abdulrehmanikram9710@gmail.com"  });   
-    //console.log(data)   
+
+    //data = await db.select().from(bookings).where(eq(bookings.clientId,session?.user?.id))
+
+    data = await db.select().from(bookings).innerJoin(services, eq(bookings.serviceId, services.id))
+   
   } catch(err){
       console.log(err)
   }
@@ -45,7 +47,7 @@ export default async function Page({ params }) {
                     <div className='flex justify-between h-[6rem] hover:opacity-60 active:opacity-60 bg-white rounded-lg shadow-sm p-3'>
               
                         <h4 className='text-[15px] text-gray-600 font-semibold'>
-                          {elm.serviceName}
+                          {elm.service.thumbnail.title}
                         </h4>
 
                        
@@ -57,7 +59,11 @@ export default async function Page({ params }) {
               
                   <DialogContent className="sm:max-w-[475px]">
                     
-                      <ReviewCard store_id={store_id} service_id={elm.service_id.toString()}/>
+                      <DialogTitle>
+                        
+                      </DialogTitle>
+                      
+                      <ReviewCard service_id={elm.booking.serviceId}/>
               
                   </DialogContent>
                 </Dialog>

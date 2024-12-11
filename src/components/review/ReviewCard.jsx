@@ -1,10 +1,8 @@
 "use client"
 import React, { useState } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
+import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { IoIosStar } from "react-icons/io";
 import { useRouter } from 'next/navigation'
 
 function StarIcon(props) {
@@ -35,17 +33,16 @@ export default function ReviewCard({store_id, service_id}) {
 
     const [rating, setRating] = useState(0)
 
-    console.log(rating)
+    //console.log(rating)
 
     const handleChange = (e) => {
         setReview(e.target.value)
     }
 
-    console.log(service_id)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        const toastID = toast.loading("Creating Booking");
+        const toastID = toast.loading("Adding Review");
 
         let res = await fetch('/api/create-review', {
             method: 'POST',
@@ -63,7 +60,7 @@ export default function ReviewCard({store_id, service_id}) {
         if( res === "Success"){
 
             // REFRESH PAGE AFTER LOGIN
-            toast.success("Booking successful", {
+            toast.success("successfuly added review", {
                 id: toastID
             });
             router.refresh();
@@ -86,9 +83,9 @@ export default function ReviewCard({store_id, service_id}) {
             <CardContent className="grid gap-4">
 
                 <div className='flex'>
-                    {[1, 2, 3, 4, 5].map((star) => {
+                    {[1, 2, 3, 4, 5].map((star,index) => {
                         return (  
-                        <span
+                        <span key={index}
                             className='start'
                             style={{
                             cursor: 'pointer',

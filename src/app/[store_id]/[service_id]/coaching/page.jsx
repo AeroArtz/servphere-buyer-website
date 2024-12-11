@@ -2,28 +2,29 @@
 import React from 'react'
 import Navbar from '@/components/Navbar';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { connectDB } from '@/utils/connect';
-import { Store } from '../../../../../models/storeModel';
-import mongoose from 'mongoose';
 import Coaching from '@/components/coaching/Coaching';
+import { db } from '@/db';
+import { and, eq, sql } from 'drizzle-orm';
+import { services } from '@/db/schema/services';
+import { reviews } from '@/db/schema/reviews';
+import { clients } from '@/db/schema/clients';
  
 export default async function Page({params}) {
 
     const { store_id, service_id } = params;
 
-    await connectDB();
-
-    let productData;
     let thumbnailData;
+    let reviews_;
+
 
     try{
-        productData = await Store.findOne(
-        { _id: new mongoose.Types.ObjectId(store_id),
-            'services._id': new mongoose.Types.ObjectId(service_id) },
-        { _id: 0, 'services.$': 1 }
-        );    
+  
+        reviews_ = await db.select().from(reviews).innerJoin(clients, and( eq(reviews.clientId, clients.id) , eq(reviews.serviceId, service_id)))
 
-        thumbnailData = productData?.services[0]?.thumbnail
+        thumbnailData = await db.execute(sql`select ${services.thumbnail} from ${services} where ${services.store_id}=${store_id}`);
+        thumbnailData = thumbnailData?.rows[0]?.thumbnail;
+
+
     } catch(err){
         console.log(err)
     }
@@ -47,7 +48,6 @@ export default async function Page({params}) {
               <Coaching
                 store_id={store_id}
                 service_id={service_id}
-                title={thumbnailData?.title}
               />
 
             </div>
@@ -57,10 +57,10 @@ export default async function Page({params}) {
             <h2 className="text-2xl font-bold">Customer Reviews</h2>
             <div className="grid gap-6">
             {
-              (JSON.stringify(productData) !== '{}' ) ? 
+              (1 > 0) ? 
 
             
-              productData?.services[0].reviews?.map((elm, index) =>  
+              reviews_?.map((elm, index) =>  
 
               <div key={index} className="flex gap-4">
                 <Avatar className="w-10 h-10 border">
@@ -69,17 +69,17 @@ export default async function Page({params}) {
                 </Avatar>
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{elm.clientName}</h3>
+                    <h3 className="font-semibold">{elm?.client?.name}</h3>
                     <div className="flex items-center gap-0.5">
 
                       {
-                        [1,2,3,4,5].map((star, index) => <StarIcon className={`w-5 h-5 ${(star < 4) ? "fill-primary": "fill-muted stroke-muted-foreground"}`} />)
+                        [1,2,3,4,5].map((star, index) => <StarIcon key={index} className={`w-5 h-5 ${(star < elm?.review?.ratings) ? "fill-primary": "fill-muted stroke-muted-foreground"}`} />)
                       }
                       
                     </div>
                   </div>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    {elm.content}
+                    {elm?.review?.content}
                   </p>
                 </div>
               </div>

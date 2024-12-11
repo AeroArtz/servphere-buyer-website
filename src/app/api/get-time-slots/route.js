@@ -1,27 +1,17 @@
-import { Store } from "../../../../models/storeModel";
 import { NextResponse } from "next/server";
-import { connectDB } from "@/utils/connect";
-import mongoose from "mongoose";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
+import { services } from "@/db/schema/services";
 
 export async function POST(req){
-
 
     const {store_id, service_id} = await req.json();
 
     try{
-        await connectDB();
-        
-        const data = await Store.findOne(
-            { _id: new mongoose.Types.ObjectId(store_id),
-                'services._id': new mongoose.Types.ObjectId(service_id) },
-            { _id: 0, 'services.$': 1 }
-          );
 
-        
+        let servicesData = await db.execute(sql`select ${services.availability} from ${services} where ${services.store_id}=${store_id} and ${services.id}=${service_id}`);        
       
-        let availabilityData = data?.services[0]?.availability;
-
-
+        let availabilityData = servicesData?.rows[0]?.availability;
        
         const slots = availabilityData?.timings?.map((elm,index) =>
             getTimeSlots(
@@ -31,6 +21,7 @@ export async function POST(req){
                 availabilityData?.breakBefore,
                 availabilityData?.breakAfter,
             )
+
         )
 
 

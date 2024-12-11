@@ -1,14 +1,16 @@
 
 import React from 'react'
-import { connectDB } from "@/utils/connect";
-import mongoose from "mongoose";
-import { Store } from '../../../../../models/storeModel';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Check, Shield } from "lucide-react"
 
 import DigitalFormSubmission from '@/components/digital/DigitalFormSubmission';
+import { db } from '@/db';
+import { services } from '@/db/schema/services';
+import { and, eq, sql } from 'drizzle-orm';
+import { reviews } from '@/db/schema/reviews';
+import { clients } from '@/db/schema/clients';
 
 
 const data =    
@@ -57,25 +59,25 @@ function StarIcon(props) {
 
 export default async function Page({params}) {
   const { store_id, service_id } = params;
+
  
-  await connectDB();
 
-  let data ;
   let thumbnailData;
+  let reviews_;
   try{
-     data = await Store.findOne(
-    { _id: new mongoose.Types.ObjectId(store_id),
-        'services._id': new mongoose.Types.ObjectId(service_id) },
-    { _id: 0, 'services.$': 1 }
-    );    
 
-    thumbnailData = data?.services[0]?.thumbnail
+    thumbnailData = await db.execute(sql`select ${services.thumbnail} from ${services} where ${services.store_id}=${store_id} and ${services.id}=${service_id}`);
+    thumbnailData = thumbnailData?.rows[0]?.thumbnail;
+
+    console.log(thumbnailData)
+
+    reviews_ = await db.select().from(reviews).innerJoin(clients, and( eq(reviews.clientId, clients.id) , eq(reviews.serviceId, service_id)))
+
+
+  
   } catch(err){
     console.log(err)
   }
-
-  
-  const reviews = data?.services[0]?.reviews
 
   return (
     <div className='w-full h-full flex'>
@@ -110,14 +112,14 @@ export default async function Page({params}) {
                   <div className="mt-4">
                       <h1
                           className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl"
-                          >{thumbnailData.title}
+                          >{thumbnailData?.title}
                       </h1>
                   </div>
 
                       <section className="mt-4">
                           <div className="flex items-center">
                               <p className="font-medium text-gray-900">
-                                  {'$'}{thumbnailData.price}
+                                  {'$'}{thumbnailData?.price}
                               </p>
 
                               <div className="ml-4 border-l text-muted-foreground border-gray-300 pl-4">
@@ -127,7 +129,7 @@ export default async function Page({params}) {
 
                           <div className="mt-4 space-y-6">
                               <p className="text-base text-muted-foreground">
-                                  {thumbnailData.description}
+                                  {thumbnailData?.description}
                               </p>
                           </div>
 
@@ -159,9 +161,8 @@ export default async function Page({params}) {
                       <div className="mt-10">
 
                           <DigitalFormSubmission
-                            store_id={store_id}
                             service_id={service_id}
-                            title={thumbnailData?.title}
+                            type="digital"
                           />
 
                       </div>
@@ -192,7 +193,7 @@ export default async function Page({params}) {
             
 
             {
-              reviews?.map((elm, index) =>  
+              reviews_?.map((elm, index) =>  
 
               <div key={index} className="flex gap-4">
                 <Avatar className="w-10 h-10 border">
@@ -201,17 +202,17 @@ export default async function Page({params}) {
                 </Avatar>
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{elm.clientName}</h3>
+                    <h3 className="font-semibold">{elm?.client?.name}</h3>
                     <div className="flex items-center gap-0.5">
 
                       {
-                        [1,2,3,4,5].map((star, index) => <StarIcon className={`w-5 h-5 ${(star < 4) ? "fill-primary": "fill-muted stroke-muted-foreground"}`} />)
+                        [1,2,3,4,5].map((star, index) => <StarIcon key={index} className={`w-5 h-5 ${(star < elm?.review?.ratings) ? "fill-primary": "fill-muted stroke-muted-foreground"}`} />)
                       }
                       
                     </div>
                   </div>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    {elm.content}
+                    {elm?.review?.content}
                   </p>
                 </div>
               </div>

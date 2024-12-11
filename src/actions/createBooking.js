@@ -1,51 +1,33 @@
 'use server'
 import { auth } from '@/auth';
-import { connectDB } from "../utils/connect";
-import { Booking } from '../../models/bookingModel';
+
+import { bookings } from '@/db/schema/bookings';
+import { db } from '@/db';
+import { sql } from 'drizzle-orm';
 
 export async function createBooking(data) {
-    const session = await auth();
-
-    console.log(data)
-    await connectDB();
 
     try{
+      const session = await auth();
       
-    
-    // Check if the slot is available based on ServiceID, startime and date
-    const existingBooking = await Booking.find({
-        
-        store_id: data.store_id,
-        service_id: data.service_id,
-        startTime: data.timeData.start,
-        endTime: data.timeData.end,
-        date: data.date
-    });
-
-    console.log(existingBooking)
- 
-    if (existingBooking.length > 0) 
-      return "Sorry for the inconvenience! This slot is no longer available. Please try again"
+      const existingBooking = await db.select().from(bookings).where(sql`${bookings.type}=${'coaching'} and ${bookings.serviceId}=${data.service_id} and ${bookings.startTime}=${data.timeData.start} and ${bookings.endTime}=${data.timeData.end} and ${bookings.date_of_booking}=${data.date}`)
   
-   
-   
-      await Booking.create({
-        store_id: data.store_id,
-        service_id: data.service_id,
+      if (existingBooking.length > 0) 
+        return "Sorry for the inconvenience! This slot is no longer available. Please try again"
+
+      await db.insert(bookings).values({
+        serviceId: data.service_id,
+        clientId : session?.user?.id,
+        type: 'coaching',
         startTime: data.timeData.start,
         endTime: data.timeData.end,
-        date : data.date,
-        clientEmail : session?.user?.email,
-        clientName: session?.user?.name,
-        serviceName: data.title,
+        date_of_booking: data.date,
         status: "pending"
-    })
 
-      
-    
-    
+      })
     
   } catch(error){
+    console.log(error)
     return 'An unexpected error occurred.'
   }
      
