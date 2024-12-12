@@ -80,7 +80,16 @@ export default async function Page({ params }) {
                     </div>
             
                     <div className='flex space-x-2'>
-                      <h4 className='text-[14px] text-gray-600'>{`$${elm.thumbnail.price}`}</h4>
+                      { (elm?.thumbnail?.discount) ? 
+
+                      <>
+                       <h4 className='text-[14px] line-through text-gray-400'>{`$${elm.thumbnail.price}`}</h4> 
+                       <h4 className='text-[14px] text-gray-600'>{`$${elm.thumbnail.discount}`}</h4> 
+                       </>
+                      : 
+                      <h4 className='text-[14px] text-gray-600'>{`$${elm.thumbnail.price}`}</h4> 
+
+                      }
             
                       <button className={`bg-[${colors.airbnb_red}] h-5 px-2 text-[14px] text-white font-medium rounded-md`}>
                         Book

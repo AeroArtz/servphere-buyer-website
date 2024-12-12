@@ -48,8 +48,8 @@ export default function Coaching({store_id, service_id}) {
             {   
                 method: 'POST',
                 body: JSON.stringify({
-                    store_id: "a721a1c0-f6c0-4a80-a115-12ecc119c9ef",
-                    service_id : "dd1ca28c-5cb2-429a-8619-8003822e20bf"
+                    store_id: store_id,
+                    service_id : service_id
                 }),
                 cache : "no-store"
             });

@@ -13,17 +13,6 @@ import { reviews } from '@/db/schema/reviews';
 import { clients } from '@/db/schema/clients';
 
 
-const data =    
-{
-    title: '1:1 Math Tutoring',
-    subtitle: 'Take your math skills to the next level',
-    desc: 'Join me on journey to take your math skills to the next level, study with an experienced tutor with over 25 years of professional experience. No more bad grades, guaranteed success achive results in jsut a few days',
-    price : '59.99',
-    store_id : '',
-    service_id: '',
-    buttonCTA: 'Book Now'
-}
-
 const URL = 'https://img.freepik.com/free-vector/minimalist-book-cover-template_23-2148899519.jpg'
 
 const BREADCRUMBS = [
@@ -118,9 +107,24 @@ export default async function Page({params}) {
 
                       <section className="mt-4">
                           <div className="flex items-center">
-                              <p className="font-medium text-gray-900">
+
+                          { (thumbnailData?.discount) ? 
+
+                            <>
+                             <p className="font-medium line-through text-gray-400/75 mr-3">
                                   {'$'}{thumbnailData?.price}
                               </p>
+                              <p className="font-medium text-gray-900">
+                                  {'$'}{thumbnailData?.discount}
+                              </p>
+                            </>
+                            : 
+                            <p className="font-medium text-gray-900">
+                                {'$'}{thumbnailData?.price}
+                            </p>
+
+                            }
+                             
 
                               <div className="ml-4 border-l text-muted-foreground border-gray-300 pl-4">
                                   Digital Download
